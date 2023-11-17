@@ -21,8 +21,6 @@ function App() {
         data: { text },
       } = await worker.recognize(selectedImage);
 
-      console.log(text);
-
       setTextResult(text);
       await worker.terminate();
     } catch (error) {
@@ -37,7 +35,6 @@ function App() {
   const handleChangeImage = (e) => {
     // e.preventDefault();
     if (e.target.files[0]) {
-      console.log('Target file: ', e.target.files[0]);
       setSelectedImage(e.target.files[0]);
     } else {
       setSelectedImage(null);
