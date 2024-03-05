@@ -44,10 +44,15 @@ function App() {
 
   return (
     <div className='App'>
-      <h1>ImgText</h1>
+      <h1>Image to Text</h1>
       <p>Зурагнаас текст таньж авах</p>
       <div className='controlNav'>
-        <div>
+        <div className='input-wrapper'>
+          <label htmlFor='upload'>Зураг оруулах</label>
+          <input type='file' id='upload' accept='image/*' onChange={handleChangeImage} />
+        </div>
+
+        <div className='language-wrapper'>
           <label htmlFor='language'>Хэл сонгох:</label>
           <select
             className='languageBar'
@@ -59,11 +64,6 @@ function App() {
             <option value='mon'>Монгол</option>
           </select>
         </div>
-      </div>
-
-      <div className='input-wrapper'>
-        <label htmlFor='upload'>Зураг оруулах</label>
-        <input type='file' id='upload' accept='image/*' onChange={handleChangeImage} />
       </div>
 
       <div className='result'>
