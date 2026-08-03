@@ -1,70 +1,96 @@
-# Getting Started with Create React App
+# Зурагнаас текст — Монгол + Англи OCR
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Монгол кирилл болон англи латин **холилдсон** бичвэрийг зурагнаас гаргаж авах
+React апп. Хоёр хөдөлгүүртэй:
 
-## Available Scripts
+| Хөдөлгүүр | Хаана ажиллах | Зардал | Хэзээ хэрэглэх |
+|---|---|---|---|
+| **Tesseract** (`tesseract.js`) | Браузерт, офлайн | Үнэгүй | Цэвэр скан, PDF-ээс авсан зураг |
+| **AI** (`claude-opus-5`) | Сервер proxy-гоор | ≈ $0.04 / зураг | Гар утасны зураг, гар бичмэл, чанар муутай эх |
 
-In the project directory, you can run:
+## Яагаад тусгай апп хэрэгтэй вэ
 
-### `npm start`
+Кирилл ба латинд **харагдацаараа яг ижил** тэмдэгтүүд бий:
+`А/A`, `В/B`, `Е/E`, `К/K`, `М/M`, `Н/H`, `О/O`, `Р/P`, `С/C`, `Т/T`, `У/Y`, `Х/X`.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Хоёр хэлний загварыг зэрэг ажиллуулахад OCR нь нэг үг дотор хоёуланг нь
+холиод гаргадаг — `МОНГОЛ` нь `MOHГOЛ` болно. Нүдээр ялгагдахгүй ч хайлт,
+эрэмбэлэлт, spell-check, өгөгдлийн сан бүгд эвдэрнэ.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+`src/ocr/postprocess.js` нь үг бүрийг тусад нь авч, **хоёрдмол бус** тэмдэгтээр
+нь скриптийг шийдээд хоёрдмолуудыг нэгтгэдэг. Мөн монголын өвөрмөц
+`Ө/ө`, `Ү/ү` үсгийг грек `θ/Υ`, латин `ɵ/Ɵ` зэргээс сэргээнэ.
 
-### `npm test`
+## Суулгах
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+npm install
+cp .env.example .env       # ANTHROPIC_API_KEY-ээ бичих (AI горим ашиглах бол)
+```
 
-### `npm run build`
+## Ажиллуулах
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Хоёр процесс — тус тусдаа терминал дээр:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+npm start     # React апп → http://localhost:3000
+npm run api   # Claude proxy → http://localhost:5174
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+CRA-гийн dev server нь `package.json` доторх `"proxy"`-гийн дагуу `/api/*`
+хүсэлтийг :5174 руу дамжуулна.
 
-### `npm run eject`
+`npm run api` ажиллуулахгүй бол **Tesseract горим хэвийн ажиллана** — зөвхөн AI
+горим л сервер шаардана.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Тест
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```bash
+npm test      # node --test scripts/*.test.mjs
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Тестүүд нь текст цэвэрлэгээний цөмийг хамарна. Homoglyph-тэй холбоотой
+оролт/хүлээлтийг `\uXXXX` escape-ээр бичсэн — кирилл `О` (U+041E) ба латин
+`O` (U+004F) эх кодод ялгагдахгүй тул литералаар бичвэл тест өөрөө худал болно.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Deploy
 
-## Learn More
+**Vercel** (хамгийн энгийн): `api/ocr.js` нь автоматаар serverless function
+болно. Төслийн тохиргоонд `ANTHROPIC_API_KEY` environment variable нэмнэ.
+Локал `api/server.js` нь зөвхөн хөгжүүлэлтэд ашиглагдана.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+**Статик hosting** (GitHub Pages г.м.): proxy тусад нь байрлуулаад
+`REACT_APP_OCR_API_URL`-ээр заана. Эсвэл зөвхөн Tesseract горимоор ашиглана.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Бүтэц
 
-### Code Splitting
+```
+api/
+  ocr.js               Claude vision proxy (Vercel handler + локал аль алинд)
+  server.js            Локал dev сервер (node:http, dependency-гүй)
+src/ocr/
+  postprocess.js       ★ Кирилл/латин homoglyph нэгтгэл, Ө/Ү сэргээлт, layout
+  preprocess.js        Canvas: EXIF, саарал, контраст сунгалт, адаптив хоёртчлол
+  tesseractEngine.js   Worker дахин ашиглалт, mon+eng, PSM, чанарын түвшин
+  claudeEngine.js      /api/ocr рүү илгээх ба хариуг нэгдсэн бүтэц рүү буулгах
+  engines.js           Хуваалцах тогтмол ба үр дүнгийн бүтэц
+  useOcr.js            React hook: явц, алдаа, цуцлалт, race guard
+src/components/        Dropzone, Controls, ResultPanel
+scripts/               Unit тест
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Анхаарах зүйл
 
-### Analyzing the Bundle Size
+- **`tesseract.js` хувилбар яг бэхлэгдсэн** (`5.1.1`, `^`-гүй). `tesseractEngine.js`
+  доторх `workerPath` / `corePath` CDN хаягууд тэр хувилбартай таарч байх ёстой.
+  Шинэчлэх бол гурвуулангийн хувилбарыг зэрэг өөрчилнө үү.
+- **Хэлний загвар** эхний удаад татагдаж IndexedDB-д кэшлэгдэнэ.
+  Хурдан: ~3 MB, Нарийвчлалтай: ~20 MB.
+- **`Ё/Е` ялгаа** — Tesseract цэгийг нь алдвал програмчлалын аргаар сэргээх
+  боломжгүй (толь бичиг шаардана). AI горим үүнийг илүү сайн зохицуулна.
+- **`Y` → `У`** гэж хөрвүүлдэг (`Ү` биш). Unicode-ийн стандарт homoglyph хос нь
+  `У` — `Ү` эсэхийг таамаглахаас зориуд татгалзсан.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Лиценз
 
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+MIT
